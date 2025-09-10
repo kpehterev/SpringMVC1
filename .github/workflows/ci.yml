@@ -17,8 +17,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'
-      - run: ./gradlew test
+      - name: Make gradlew executable
+        run: chmod +x gradlew
       - name: Run tests
-        run: chmod +x gradlew && ./gradlew test
+        run: ./gradlew test
         env:
           SPRING_PROFILES_ACTIVE: test

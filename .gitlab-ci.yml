@@ -1,0 +1,40 @@
+# .gitlab-ci.yml
+image: gradle:8.5.0-jdk17
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  SPRING_PROFILES_ACTIVE: "test"
+
+cache:
+  key: "${CI_COMMIT_REF_SLUG}"
+  paths:
+    - .gradle/caches
+    - .gradle/wrapper
+    - build/
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - ./gradlew test --info
+  artifacts:
+    when: always
+    paths:
+      - build/test-results/
+      - build/reports/tests/
+    reports:
+      junit: build/test-results/test/**/*.xml
+
+# Для код покрытия
+test-with-coverage:
+  stage: test
+  script:
+    - ./gradlew test jacocoTestReport
+  artifacts:
+    paths:
+      - build/reports/jacoco/
+      - build/reports/tests/
+    reports:
+      junit: build/test-results/test/**/*.xml

@@ -1,40 +1,42 @@
-# .gitlab-ci.yml
-image: gradle:8.5.0-jdk17
+name: Java CI with Gradle
 
-variables:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  SPRING_PROFILES_ACTIVE: "test"
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
 
-cache:
-  key: "${CI_COMMIT_REF_SLUG}"
-  paths:
-    - .gradle/caches
-    - .gradle/wrapper
-    - build/
+jobs:
+  test:
+    runs-on: ubuntu-latest
 
-stages:
-  - test
+    steps:
+      - uses: actions/checkout@v4
 
-test:
-  stage: test
-  script:
-    - ./gradlew test --info
-  artifacts:
-    when: always
-    paths:
-      - build/test-results/
-      - build/reports/tests/
-    reports:
-      junit: build/test-results/test/**/*.xml
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
 
-# Для код покрытия
-test-with-coverage:
-  stage: test
-  script:
-    - ./gradlew test jacocoTestReport
-  artifacts:
-    paths:
-      - build/reports/jacoco/
-      - build/reports/tests/
-    reports:
-      junit: build/test-results/test/**/*.xml
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run tests with Gradle
+        run: ./gradlew test --info
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: build/test-results/
+
+      - name: Publish Test Results
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          report_paths: 'build/test-results/test/**/*.xml'
